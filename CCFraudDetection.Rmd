@@ -1,0 +1,179 @@
+---
+title: "Credit Card Fraud Detection with Random Forest - Machine Learning Project"
+author: "Ryan Navarro, BSN, RN, CPAN, CCRN Alumnus"
+date: "2024-12-03"
+output:
+  pdf_document: default
+  html_document:
+    df_print: paged
+---
+
+
+
+# 1 - GET THE DATA
+
+## Load libraries
+
+```{r}
+library(dplyr) 
+library(ggplot2) 
+library(caret) 
+library(ROCR)
+library(randomForest) 
+library(e1071)
+```
+
+## Load the dataset
+
+```{r}
+cc <- read.csv('/Users/rn/Desktop/Projects/CC Fraud Detection in R/creditcard.csv')
+```
+
+
+
+# 2 - EXPLORE THE DATA
+
+## View first few rows
+
+```{r}
+head(cc)
+```
+
+## Summary statistics
+
+```{r}
+summary(cc)
+```
+
+## Check structure
+
+```{r}
+str(cc)
+```
+
+## Check Class for imbalance
+
+### non-fraud = 0, fraud = 1
+
+#### *Imbalance common due to rarity of fraudulent vs legitimate transactions.*
+
+```{r}
+table(cc$Class)
+```
+
+## Check for missing values
+
+```{r}
+sum(is.na(cc))
+```
+## Visualize Class distribution
+
+```{r}
+ggplot(cc, aes(x = factor(Class))) +
+  geom_bar(fill = c('blue', 'red')) +
+  labs(title = 'Class distribution', x = 'Class', y = 'Count')
+```
+
+## Correlation Heatmap (to look at relatioships of Features)
+
+```{r}
+library(corrplot)
+corr_matrix <- cor(cc %>% select(-Class))
+corrplot(corr_matrix, method = 'circle')
+```
+
+
+
+# 3 - PREPARE THE DATA
+
+## Normalize numerical features
+
+```{r}
+cc$Amount <- scale(cc$Amount)
+```
+
+## Split data into Features (X) and Target (y)
+
+```{r}
+X <- cc %>% select(-Class)
+y <- cc$Class
+```
+
+## Split data into Training (80%) and Test (20%) Sets
+
+```{r}
+set.seed(42)
+train_cc <- createDataPartition(y, p=0.8, list=FALSE)
+X_train <- X[train_cc, ]
+X_test <- X[-train_cc, ]
+y_train <- y[train_cc]
+y_test <- y[-train_cc]
+```
+
+## Check Class for imbalance
+
+```{r}
+table(y_train)
+```
+
+# 4 - SHORTLIST PROMISING MODELS
+
+## Train Random Forest model using the Training data
+
+```{r}
+rf_mod <- randomForest(x = X_train, y = as.factor(y_train), ntree = 100, mtry = 5, importance = TRUE)
+```
+
+## Summary of the Random Forest model
+
+```{r}
+summary(rf_mod)
+```
+
+## Evaluate Feature importance
+
+```{r}
+varImp(rf_mod)
+```
+
+
+# 5 - MEASURE PERFORMANCE
+
+## Prediction on Test set
+```{r}
+rf_predict <- predict(rf_mod, X_test)
+```
+
+## Confusion Matrix
+
+```{r}
+confusionMatrix(as.factor(rf_predict), as.factor(y_test))
+```
+
+## ROC Curve
+
+```{r}
+rf_prob <- predict(rf_mod, X_test, type = 'prob')[, 2]
+pred <- prediction(rf_prob, y_test)
+perf <- performance(pred, 'tpr', 'fpr')
+plot(perf, col = 'blue', main = 'ROC Curve')
+```
+
+
+
+# 6 - DEPLOY THE MODEL
+
+## Save the Trained model for future use.
+
+```{r}
+saveRDS(rf_mod, 'CCFraudDetection_rf_mod.rds')
+```
+
+## Load the Trained model for reuse
+### Eg. predictions <- predict(loaded_model, X_new) 
+#### *where X_new is your new data (new features) for prediction
+
+```{r}
+loaded_model <- readRDS('CCFraudDetection_rf_mod.rds')
+```
+
