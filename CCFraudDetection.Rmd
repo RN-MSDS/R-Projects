@@ -1,0 +1,43 @@
+---
+title: "Credit Card Fraud Detection - Machine Learning Project"
+author: "Ryan Navarro, BSN, RN, CPAN, CCRN Alumnus"
+date: "2024-12-03"
+output: pdf_document
+---
+
+# 1 - GET THE DATA
+
+## Load libraries
+
+```{r}
+library(dplyr) 
+library(ggplot2) 
+library(caret) 
+library(ROCR)
+library(randomForest) 
+library(e1071)
+```
+
+## Load the dataset
+
+```{r}
+cc <- read.csv('/Users/rn/Desktop/Projects/CC Fraud Detection in R/creditcard.csv')
+```
+
+
+
+# 2 - EXPLORE THE DATA
+
+## View first few rows
+
+```{r}
+head(cc)
+```
+
+## Summary statistics
+
+```{r}
+summary(cc)
+```
+
+
